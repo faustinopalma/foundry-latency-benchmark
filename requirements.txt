@@ -1,0 +1,5 @@
+openai==3.19.0
+azure-identity==1.25.3
+azure-storage-blob==12.30.3
+httpx==0.28.1
+tiktoken==0.12.0

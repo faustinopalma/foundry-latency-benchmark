@@ -1,0 +1,13 @@
+{
+  "subscription": "",
+  "tenant": "",
+  "resource_group": "rg-foundry-benchmark",
+  "location": "swedencentral",
+  "foundry": "",
+  "storage": "",
+  "identity": "id-latency-benchmark",
+  "owner_tag": "latency-benchmark",
+  "execution_group": "rg-latency-execution",
+  "resource_prefix": "latency",
+  "deployment_suffix": "experiment"
+}

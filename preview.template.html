@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="EU Data Zone versus Global Standard: measured latency across regions, APIs, time windows and synthetic workloads.">
+<title>Foundry Latency | Scale Test Results</title>
+<script>
+(() => {
+  const param = new URLSearchParams(window.location.search).get("scoutTheme");
+  const theme = param || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+  document.documentElement.setAttribute("data-theme", theme);
+})();
+</script>
+<style>
+:root {
+  color-scheme: light;
+  --cp-bg: #f7f4ef;
+  --cp-bg-elevated: #fcfbf8;
+  --cp-surface: #ffffff;
+  --cp-surface-soft: #f5f5f5;
+  --cp-border: #dedede;
+  --cp-border-strong: #919191;
+  --cp-text: #242424;
+  --cp-text-muted: #5c5c5c;
+  --cp-text-soft: #6f6f6f;
+  --cp-accent: #b11f4b;
+  --cp-accent-hover: #9a1a41;
+  --cp-accent-soft: rgba(177, 31, 75, 0.08);
+  --cp-accent-fg: #ffffff;
+  --cp-success: #16a34a;
+  --cp-danger: #dc2626;
+  --cp-warning: #f59e0b;
+  --cp-link: #0078d4;
+  --cp-shadow: 0 18px 48px rgba(0, 0, 0, 0.12);
+  --cp-overlay: rgba(255, 255, 255, 0.8);
+  --cp-panel: rgba(255, 255, 255, 0.86);
+  --cp-panel-strong: rgba(255, 255, 255, 0.96);
+  --cp-sheen: rgba(255, 255, 255, 0.55);
+  --cp-highlight: rgba(177, 31, 75, 0.12);
+}
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --cp-bg: #3d3b3a;
+  --cp-bg-elevated: #343231;
+  --cp-surface: #292929;
+  --cp-surface-soft: #2e2e2e;
+  --cp-border: #474747;
+  --cp-border-strong: #5f5f5f;
+  --cp-text: #dedede;
+  --cp-text-muted: #919191;
+  --cp-text-soft: #b0b0b0;
+  --cp-accent: #fd8ea1;
+  --cp-accent-hover: #fb7b91;
+  --cp-accent-soft: rgba(253, 142, 161, 0.14);
+  --cp-accent-fg: #1a1a1a;
+  --cp-success: #4ade80;
+  --cp-danger: #f87171;
+  --cp-warning: #fbbf24;
+  --cp-link: #4da6ff;
+  --cp-shadow: 0 18px 48px rgba(0, 0, 0, 0.32);
+  --cp-overlay: rgba(41, 41, 41, 0.88);
+  --cp-panel: rgba(41, 41, 41, 0.72);
+  --cp-panel-strong: rgba(41, 41, 41, 0.96);
+  --cp-sheen: rgba(255, 255, 255, 0.04);
+  --cp-highlight: rgba(253, 142, 161, 0.12);
+}
+*{box-sizing:border-box;letter-spacing:0}
+body{margin:0;background:var(--cp-surface);color:var(--cp-text);font-family:"Segoe UI",Aptos,Calibri,-apple-system,BlinkMacSystemFont,sans-serif;font-size:15px;line-height:1.5}
+a{color:var(--cp-link)}
+button,select,input{font:inherit}
+button,select{color:var(--cp-text);background:var(--cp-surface);border:1px solid var(--cp-border);border-radius:6px}
+button,select,label{cursor:pointer}
+button:focus-visible,select:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid var(--cp-link);outline-offset:3px}
+.wrap{max-width:1264px;margin:auto;padding:0 32px}
+.masthead{border-bottom:1px solid var(--cp-border);background:var(--cp-surface-soft)}
+.masthead .wrap{min-height:62px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding-top:12px;padding-bottom:12px}
+.identity{display:flex;align-items:center;gap:12px;font-size:13px;font-weight:700}
+.mark{width:24px;height:24px;display:flex;align-items:flex-end;gap:3px;border-bottom:2px solid var(--cp-text)}
+.mark span{width:5px;background:var(--cp-accent)}
+.mark span:nth-child(1){height:10px}.mark span:nth-child(2){height:19px}.mark span:nth-child(3){height:14px;background:var(--cp-link)}
+.muted{color:var(--cp-text-muted)}
+.theme{display:flex;align-items:center;gap:8px;font-size:12px}.theme select{padding:5px 26px 5px 8px}
+.opening{padding-top:34px;padding-bottom:26px;border-bottom:1px solid var(--cp-border)}
+.eyebrow{display:flex;gap:10px;align-items:center;flex-wrap:wrap;color:var(--cp-text-muted);font-size:12px;font-weight:650;text-transform:uppercase}
+.badge{padding:3px 8px;border:1px solid var(--cp-accent);color:var(--cp-accent);font-weight:700;border-radius:3px}
+h1{font-size:36px;line-height:1.15;font-weight:650;margin:14px 0 12px}
+.lead{font-size:19px;line-height:1.45;max-width:920px;margin:0 0 14px}
+.conclusion{max-width:1000px;color:var(--cp-text-muted);margin:0;font-size:14px}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));padding:26px 0 24px;gap:24px}
+.stat{border-left:2px solid var(--cp-border);padding-left:16px}.stat:first-child{border-color:var(--cp-accent)}
+.stat dt{font-size:12px;font-weight:650;color:var(--cp-text-muted)}
+.stat dd{font-size:32px;line-height:1.2;font-variant-numeric:tabular-nums;margin:7px 0 6px;font-weight:650}
+.stat small{font-size:12px;display:block;color:var(--cp-text-muted)}
+.coverage{display:flex;align-items:center;gap:18px;padding:14px 0;border-top:1px solid var(--cp-border);font-size:13px;flex-wrap:wrap}
+.coverage strong{color:var(--cp-accent)}
+.workbench{padding-top:28px}
+.section-title{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+h2{font-size:22px;line-height:1.3;margin:0 0 8px;font-weight:650}
+.section-title p{font-size:12px;color:var(--cp-text-muted);margin:0}
+.tabs{display:flex;border-bottom:1px solid var(--cp-border);margin:18px 0;overflow-x:auto;gap:24px}
+.tabs button{border:0;border-bottom:3px solid var(--cp-surface);border-radius:0;white-space:nowrap;padding:11px 0;background:var(--cp-surface);font-weight:650;font-size:14px}
+.tabs button[aria-selected="true"]{color:var(--cp-accent);border-bottom-color:var(--cp-accent)}
+.filters{display:grid;grid-template-columns:1.1fr 1.1fr 1.3fr 1.25fr;gap:16px;padding:6px 0 18px}
+.field{display:flex;flex-direction:column;gap:6px;min-width:0;font-size:12px;font-weight:650;color:var(--cp-text-muted)}
+.field select{width:100%;padding:9px 8px;min-height:40px;font-size:14px;font-weight:400}
+.modes{display:flex;gap:20px;align-items:center;flex-wrap:wrap;padding:10px 0 20px;border-bottom:1px solid var(--cp-border);font-size:13px}
+fieldset{display:flex;margin:0;padding:0;border:0;gap:14px;align-items:center;flex-wrap:wrap;min-width:0}
+legend{float:left;margin-right:14px;font-size:12px;font-weight:650;color:var(--cp-text-muted)}
+.radio{display:flex;gap:6px;align-items:center}input[type="radio"]{accent-color:var(--cp-accent);margin:0}
+.scope-note{font-size:13px;color:var(--cp-text-muted);padding:14px 0;margin:0;min-height:54px}
+.chart-head{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin:6px 0 12px}
+h3{margin:0;font-size:17px;font-weight:650}.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12px}
+.key{display:inline-flex;gap:7px;align-items:center}.swatch{width:12px;height:12px;background:var(--cp-accent);border-radius:2px}.swatch.eu{background:var(--cp-link)}
+.chart{padding:8px 0 22px;min-height:200px}
+.axis{display:grid;grid-template-columns:190px 1fr 94px;gap:16px;font-size:11px;color:var(--cp-text-muted);margin-bottom:8px}
+.axis-scale{display:flex;justify-content:space-between;grid-column:2}
+.chart-group{display:grid;grid-template-columns:190px 1fr;gap:16px;padding:14px 0;border-top:1px solid var(--cp-border)}
+.group-label{font-weight:650;font-size:13px;padding-top:9px}.group-label small{font-weight:400;color:var(--cp-text-muted);display:block;font-size:12px;margin-top:3px}
+.series{display:grid;gap:12px}.bar-row{display:grid;grid-template-columns:1fr 94px;gap:16px;align-items:center;min-height:36px;--series:var(--cp-accent)}
+.bar-row.eu{--series:var(--cp-link)}
+.bar-track{height:26px;position:relative;background:var(--cp-surface-soft);border-right:1px solid var(--cp-border)}
+.tail{position:absolute;top:12px;height:2px;background:var(--series);width:var(--tail)}
+.bar{position:absolute;top:6px;height:14px;background:var(--series);width:var(--median)}
+.p95{position:absolute;left:var(--tail);top:7px;width:3px;height:12px;background:var(--series);transform:translateX(-3px)}
+.bar-value{text-align:right;font-variant-numeric:tabular-nums;font-weight:650;font-size:14px}.bar-value small{display:block;font-size:11px;font-weight:400;color:var(--cp-text-muted)}
+.pair-summary{padding:16px 18px;background:var(--cp-surface-soft);border-left:3px solid var(--cp-accent);font-size:13px;margin:4px 0 24px}.pair-summary strong{display:block;margin-bottom:5px}
+.table-wrap{width:100%;overflow:auto;border-top:1px solid var(--cp-border);margin-top:12px;max-height:500px}
+table{border-collapse:collapse;width:100%;font-size:12px;white-space:nowrap}
+th{text-align:left;font-weight:650;background:var(--cp-surface-soft);position:sticky;top:0;z-index:1}
+td,th{padding:12px 14px;border-bottom:1px solid var(--cp-border);vertical-align:top}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+tbody tr:hover{background:var(--cp-accent-soft)}
+.partial{color:var(--cp-accent);font-weight:650}.table-note{font-size:12px;color:var(--cp-text-muted);margin:10px 0 28px}
+.methods{background:var(--cp-surface-soft);border-top:1px solid var(--cp-border);margin-top:18px;padding:30px 0}
+.method-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px 48px;margin-top:18px}.method-grid p{font-size:13px;color:var(--cp-text-muted);margin:7px 0 0}
+.method-grid h3{font-size:14px}
+details{margin-top:24px;border-top:1px solid var(--cp-border);padding-top:18px;font-size:13px}summary{cursor:pointer;font-weight:650}.evidence-list{margin:14px 0 0;padding:0;list-style:none}.evidence-list li{margin-bottom:14px}.hash{font-family:Consolas,"Courier New",Courier,monospace;overflow-wrap:anywhere;font-size:11px;color:var(--cp-text-muted);display:block;margin-top:5px}
+footer{padding:18px 0;font-size:12px;color:var(--cp-text-muted)}footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.empty{padding:28px 0;font-size:14px;color:var(--cp-text-muted)}
+@keyframes appear{from{opacity:0}to{opacity:1}}main{animation:appear .25s ease-out}
+@media(prefers-reduced-motion:reduce){main{animation:none}}
+@media(max-width:800px){.filters{grid-template-columns:1fr 1fr}.stats{gap:20px;grid-template-columns:1fr 1fr}.method-grid{grid-template-columns:1fr}.chart-group{grid-template-columns:155px 1fr}.axis{grid-template-columns:155px 1fr 94px}.wrap{padding-left:20px;padding-right:20px}}
+@media(max-width:520px){h1{font-size:30px}.lead{font-size:17px}.opening{padding-top:26px}.stat dd{font-size:27px}.stat{padding-left:10px}.stats{gap:22px 12px}.tabs{gap:22px}.chart-group{grid-template-columns:1fr;gap:7px}.group-label{padding-top:0}.group-label small{display:inline;margin-left:8px}.axis{grid-template-columns:1fr 82px}.axis-scale{grid-column:1}.bar-row{grid-template-columns:1fr 82px;gap:12px}.coverage{gap:7px}.theme span{display:none}.filters{gap:12px}.scope-note{min-height:0}.wrap{padding-left:16px;padding-right:16px}.masthead .wrap{gap:8px}}
+@media print{.filters,.modes,.tabs,.theme{display:none}.table-wrap{max-height:none;overflow:visible}.methods{break-before:page}body{font-size:11px}.wrap{padding:0}.chart-group{break-inside:avoid}}
+</style>
+</head>
+<body>
+<header class="masthead"><div class="wrap"><div class="identity"><span class="mark" aria-hidden="true"><span></span><span></span><span></span></span>MODEL PERFORMANCE / EXPERIMENT SERIES</div><label class="theme"><span>Appearance</span><select id="theme" aria-label="Appearance"><option value="light">Light</option><option value="dark">Dark</option></select></label></div></header>
+<main>
+<section class="opening wrap" aria-labelledby="title">
+<div class="eyebrow"><span class="badge" id="publication-state"></span><span id="date-range"></span></div>
+<h1 id="title">Foundry latency at scale</h1>
+<p class="lead">EU Data Zone versus Global Standard: latency differences depend on workload, API and time window.</p>
+<p class="conclusion" id="finding"></p>
+<p class="conclusion" id="generation-finding"></p>
+<dl class="stats"><div class="stat"><dt>Measured workflows</dt><dd id="attempted"></dd><small>Warmups excluded</small></div><div class="stat"><dt>Exact correct outcomes</dt><dd id="correct"></dd><small id="correct-rate"></small></div><div class="stat"><dt>Technical failures</dt><dd id="technical"></dd><small id="failure-detail"></small></div><div class="stat"><dt>Fully sampled conditions</dt><dd id="coverage"></dd><small>100 attempted workflows each</small></div></dl>
+<div class="coverage"><strong id="snapshot-gap"></strong><span id="snapshot-note"></span></div>
+</section>
+<section class="wrap workbench" aria-labelledby="comparison-title">
+<div class="section-title"><h2 id="comparison-title">Measured comparisons</h2><p id="selection-count" aria-live="polite"></p></div>
+<div class="tabs" role="tablist" aria-label="Workload dimension"><button id="tab-geography" role="tab" aria-selected="true" aria-controls="results" data-view="geography">Geography</button><button id="tab-context" role="tab" aria-selected="false" aria-controls="results" data-view="context" tabindex="-1">Context size</button><button id="tab-generation" role="tab" aria-selected="false" aria-controls="results" data-view="generation" tabindex="-1">Output length</button><button id="tab-load" role="tab" aria-selected="false" aria-controls="results" data-view="load" tabindex="-1">Concurrency</button><button id="tab-cache" role="tab" aria-selected="false" aria-controls="results" data-view="cache" tabindex="-1">Prompt cache</button></div>
+<div class="filters"><label class="field">Model<select id="model"><option value="gpt-5.4">GPT-5.4</option><option value="gpt-5.4-mini">GPT-5.4 Mini</option></select></label><label class="field">API<select id="api"><option value="chat">Chat Completions</option><option value="responses">Responses</option></select></label><label class="field">Runner region<select id="runner"><option value="all">Both regions</option><option value="swedencentral">Sweden Central</option><option value="italynorth">Italy North</option></select></label><label class="field">Duration metric<select id="metric"><option value="workflow_ms_correct_only">Complete workflow</option><option value="call_ms_correct_only">Complete model call</option><option value="first_content_ms_correct_only">First visible content</option></select></label></div>
+<div class="modes"><label class="field">Time window<select id="window"><option value="window-0">Overnight</option><option value="window-1">Morning</option></select></label><fieldset><legend>Response delivery</legend><label class="radio"><input type="radio" name="stream" value="false" checked>Non-streaming</label><label class="radio"><input type="radio" name="stream" value="true">Streaming</label></fieldset></div>
+<div id="results" role="tabpanel" aria-labelledby="tab-geography"><p class="scope-note" id="scope-note"></p><div class="chart-head"><h3 id="chart-title"></h3><div class="legend"><span class="key"><span class="swatch"></span>Global Standard</span><span class="key"><span class="swatch eu"></span>EU Data Zone</span></div></div><div class="chart" id="chart" role="figure" aria-label="Median duration bars with 95th percentile markers"></div><div class="pair-summary" id="pair-summary"></div><div class="section-title"><h3>Condition-level results</h3><p>Latency from validated correct observations</p></div><div class="table-wrap" tabindex="0" aria-label="Condition results table"><table><thead><tr><th>Condition</th><th>Runner</th><th>Resource</th><th>Deployment</th><th class="num">Correct / attempted</th><th class="num">Technical calls</th><th class="num">P50, s</th><th class="num">P95, s</th><th class="num">95% interval for P50, s</th><th class="num">Cache hits / observed calls</th></tr></thead><tbody id="rows"></tbody></table></div><p class="table-note">P50 is the median; P95 is the 95th percentile. Intervals are exploratory bootstrap estimates, not service guarantees. Partial conditions retain their actual denominators.</p></div>
+</section>
+<section class="methods"><div class="wrap"><h2>What was measured</h2><div class="method-grid"><div><h3>Two-stage baseline; single-stage sweeps</h3><p>Geography uses two dependent calls with approximately 1,500 input tokens and 100 output tokens per call. Context, output, concurrency and cache sweeps use one model call per workflow. All timing is measured at the client.</p></div><div><h3>Exact validation, before latency inclusion</h3><p>Structured output must match the expected schema and field values. Completion and token usage must be present. HTTP 200 alone is insufficient. A failed first call prevents the dependent second call.</p></div><div><h3>Synthetic structured-output workload</h3><p>GPT-5.4 (2026-03-05) and GPT-5.4 Mini (2026-03-17), reasoning effort none, Managed Identity, 100,000 TPM per deployment, and no automatic SDK retries. Output length is controlled through a schema-constrained audit note. This does not represent unconstrained prose or a production application.</p></div><div><h3>Routing and timing boundaries</h3><p>Resource region does not identify the model's processing location. Global Standard can route globally; EU Data Zone is constrained to its data zone. First visible content is a client event, not the service's TTFT metric. SSE events are not individual tokens.</p></div><div><h3>Snapshot and temporal limits</h3><p id="limits"></p></div><div><h3>Comparisons are exploratory</h3><p>Case-matched comparisons include only pairs where both workflows were correct. Conditions were not necessarily measured simultaneously. Bootstrap intervals do not correct for temporal dependence or multiple comparisons. Concurrency tests use synchronized, quota-paced bursts, not unlimited offered load.</p></div></div><details><summary>Evidence scope and reproducibility</summary><p id="evidence-summary"></p><ul class="evidence-list" id="evidence"></ul><p>Underlying observations and runtime configuration are not embedded. This file contains aggregate test results only. Method and analysis code accompany the benchmark; archive hashes identify the verified inputs but do not make those inputs independently inspectable.</p></details></div></section>
+</main>
+<footer><div class="wrap"><span>MODEL LATENCY / SYNTHETIC SCALE TESTS</span><span id="generated"></span></div></footer>
+<script id="public-data" type="application/json">__PUBLIC_DATA__</script>
+<script>
+"use strict";
+const DATA = JSON.parse(document.getElementById("public-data").textContent);
+const byId = id => document.getElementById(id);
+const integer = value => new Intl.NumberFormat("en-US").format(value);
+const seconds = value => value == null ? "Not measured" : (value / 1000).toFixed(3);
+const region = value => ({swedencentral:"Sweden Central",italynorth:"Italy North"})[value];
+const shortRegion = value => ({swedencentral:"Sweden",italynorth:"Italy"})[value];
+const stamp = value => new Date(value).toISOString().slice(0,19).replace("T"," ") + " UTC";
+const profileLabel = name => name === "geography" ? "Geography" : name.startsWith("context-") ? integer(Number(name.split("-")[1])) + " input tokens" : name.startsWith("generation-") ? integer(Number(name.split("-")[1])) + " output tokens" : name.startsWith("load-") ? "Concurrency " + name.split("-")[1] : name === "cache-shared" ? "Shared prefix" : "Unique prefix";
+const full = DATA.conditions.filter(row => row.attempted_workflows === DATA.planned_per_condition).length;
+const missed = DATA.conditions.length * DATA.planned_per_condition - DATA.attempted_workflows;
+const deployments = DATA.comparisons.filter(row => row.comparison === "EU Data Zone minus Global" && row.left_condition[5] === "geography" && row.bootstrap_95_percent_interval_ms);
+const faster = deployments.filter(row => row.bootstrap_95_percent_interval_ms[1] < 0).length;
+const slower = deployments.filter(row => row.bootstrap_95_percent_interval_ms[0] > 0).length;
+byId("publication-state").textContent = DATA.preliminary ? "Preliminary results" : "Complete revised campaign";
+byId("finding").textContent = `Across ${deployments.length} case-matched geographic comparisons, ${faster} favored EU Data Zone and ${slower} favored Global Standard with exploratory 95% intervals excluding zero. Each comparison holds model, API, streaming mode, time window and regions fixed. Intervals including zero do not prove equivalence.`;
+const longOutput=DATA.comparisons.filter(row=>row.comparison==="EU Data Zone minus Global"&&row.left_condition[5]==="generation-1500"&&row.bootstrap_95_percent_interval_ms);
+const inconclusiveLong=longOutput.filter(row=>row.bootstrap_95_percent_interval_ms[0]<=0&&row.bootstrap_95_percent_interval_ms[1]>=0).length;
+byId("generation-finding").textContent=`At approximately 1,500 output tokens, ${inconclusiveLong} of ${longOutput.length} within-model/API comparisons have mean-duration intervals including zero. Similar total-duration medians can coexist with different first-content latency and tail latency; processing distance was not measured.`;
+byId("date-range").textContent = stamp(DATA.started_utc) + " to " + stamp(DATA.ended_utc);
+byId("attempted").textContent = integer(DATA.attempted_workflows);
+byId("correct").textContent = integer(DATA.correct_workflows);
+byId("correct-rate").textContent = `${(100 * DATA.correct_workflows / DATA.attempted_workflows).toFixed(3)}% of ${integer(DATA.attempted_workflows)} attempts`;
+byId("technical").textContent = integer(DATA.failure_categories_calls.technical_error || 0);
+byId("failure-detail").textContent = `${integer(DATA.failure_categories_calls.incorrect_fields || 0)} incorrect-output calls; ${integer(DATA.failure_categories_calls.refusal || 0)} refusals`;
+byId("coverage").textContent = `${full} / ${DATA.conditions.length}`;
+byId("snapshot-gap").textContent = missed ? `${integer(missed)} planned observations absent from the captured snapshots.` : "All represented conditions have their planned sample count.";
+byId("snapshot-note").textContent = DATA.preliminary ? `${DATA.conditions.length-full} partial conditions. Scope is limited to captured observations.` : "Overnight and morning geography; advanced sweeps overnight only. Cancelled windows excluded.";
+byId("limits").textContent = DATA.preliminary ? `Preliminary captured observations: ${integer(DATA.attempted_workflows)} measured workflows, with ${integer(missed)} observations absent from ${DATA.conditions.length-full} partially captured conditions. A snapshot is not proof of complete campaign coverage.` : "The complete revised campaign includes overnight and morning geographic measurements. Advanced sweeps ran overnight in Sweden Central only. The morning runners used fresh processes, connections and warmups. The cancelled original windows are excluded. These two windows do not establish 24-hour stability or isolate time-of-day effects.";
+byId("evidence-summary").textContent = `${integer(DATA.sources.reduce((total,source)=>total+source.verified_records,0))} records were checked against their Blob-verification receipts before aggregation. ${integer(DATA.warmup_workflows_excluded)} warmup workflows are excluded from latency results. Every chart is computed from the represented observations, not averaged percentiles.`;
+DATA.sources.forEach((source,index) => { const item=document.createElement("li"); item.textContent=`${source.scope==="final_export"?"Final export":"Snapshot"} ${index+1}: ${integer(source.verified_records)} verified records.`+(source.inventory_started_utc?` Inventory ${stamp(source.inventory_started_utc)} to ${stamp(source.inventory_ended_utc)}.`:""); const hash=document.createElement("span"); hash.className="hash"; hash.textContent="SHA-256 "+source.archive_sha256; item.appendChild(hash); byId("evidence").appendChild(item); });
+byId("generated").textContent="Report built "+stamp(DATA.created_utc);
+byId("window").querySelector('[value="window-1"]').disabled=!DATA.conditions.some(row=>row.window==="window-1");
+byId("theme").value=document.documentElement.dataset.theme === "dark" ? "dark" : "light";
+byId("theme").addEventListener("change", event=>document.documentElement.dataset.theme=event.target.value);
+let currentView="geography";
+const tabs=[...document.querySelectorAll("[role=tab]")];
+function selectTab(tab){currentView=tab.dataset.view;tabs.forEach(item=>{const selected=item===tab;item.setAttribute("aria-selected",String(selected));item.tabIndex=selected?0:-1});byId("results").setAttribute("aria-labelledby",tab.id);if(currentView!=="geography"){document.querySelector('input[name="stream"][value="true"]').checked=true;byId("runner").value="swedencentral";}render();}
+tabs.forEach((tab,index)=>{tab.addEventListener("click",()=>selectTab(tab));tab.addEventListener("keydown",event=>{if(!["ArrowLeft","ArrowRight","Home","End"].includes(event.key))return;event.preventDefault();const next=event.key==="Home"?0:event.key==="End"?tabs.length-1:(index+(event.key==="ArrowRight"?1:-1)+tabs.length)%tabs.length;tabs[next].focus();selectTab(tabs[next]);});});
+const notes={geography:"Two dependent calls per workflow; approximately 1,500 input / 100 output tokens per call. Labels show runner region to Foundry resource region.",context:"Single-call sweeps at approximately 1,500, 8,000 and 32,000 input tokens; approximately 100 output tokens. Sweden Central runner and resources only.",generation:"Single-call sweeps at approximately 100, 500 and 1,500 output tokens; approximately 8,000 input tokens. Sweden Central runner and resources only.",load:"Synchronized bursts at concurrency 1, 4, 8 and 16; quota-aware admission pacing. Sweden Central runner and resources only.",cache:"Unique versus shared prompt prefixes with approximately 8,000 input tokens. Cache hits require positive service-reported cached tokens. Partial conditions are retained with explicit counts."};
+function render(){
+  const advanced=currentView!=="geography";
+  byId("window").disabled=advanced;
+  if(advanced)byId("window").value="window-0";
+  document.querySelector('input[name="stream"][value="false"]').disabled=advanced;
+  byId("runner").disabled=advanced;
+  const streaming=document.querySelector('input[name="stream"]:checked').value==="true";
+  byId("metric").querySelector('[value="first_content_ms_correct_only"]').disabled=!streaming;
+  if(!streaming && byId("metric").value==="first_content_ms_correct_only")byId("metric").value="workflow_ms_correct_only";
+  const model=byId("model").value, api=byId("api").value, runner=byId("runner").value, metric=byId("metric").value;
+  const rows=DATA.conditions.filter(row=>row.window===byId("window").value&&row.model===model&&row.api===api&&row.stream===streaming&&(runner==="all"||row.client_region===runner)&&(currentView==="geography"?row.profile==="geography":row.profile.startsWith(currentView+"-")));
+  rows.sort((left,right)=>left.client_region.localeCompare(right.client_region)||left.resource_region.localeCompare(right.resource_region)||((Number(left.profile.split("-")[1])||0)-(Number(right.profile.split("-")[1])||0))||left.profile.localeCompare(right.profile)||right.sku.localeCompare(left.sku));
+  byId("selection-count").textContent=`${rows.length} conditions / ${integer(rows.reduce((total,row)=>total+row.attempted_workflows,0))} attempted workflows`;
+  byId("scope-note").textContent=notes[currentView];
+  const metricLabel=byId("metric").selectedOptions[0].textContent;
+  byId("chart-title").textContent=metricLabel+" / median and P95, seconds";
+  const maximum=Math.max(1,...rows.map(row=>row[metric].p95||0))*1.12;
+  byId("chart").innerHTML=`<div class="axis"><div class="axis-scale"><span>0 s</span><span>${seconds(maximum/2)} s</span><span>${seconds(maximum)} s</span></div></div>`;
+  const groups=new Map();
+  rows.forEach(row=>{const key=currentView==="geography"?row.client_region+"/"+row.resource_region:row.profile;if(!groups.has(key))groups.set(key,[]);groups.get(key).push(row);});
+  for(const members of groups.values()){
+    const first=members[0], section=document.createElement("div");section.className="chart-group";
+    const label=currentView==="geography"?shortRegion(first.client_region)+" to "+shortRegion(first.resource_region):profileLabel(first.profile);
+    section.innerHTML=`<div class="group-label">${label}<small>${currentView==="geography"?"Runner to resource":"Single-call workflow"}</small></div><div class="series"></div>`;
+    for(const row of members){const value=row[metric], name=row.sku==="GlobalStandard"?"Global Standard":"EU Data Zone", bar=document.createElement("div");bar.className="bar-row"+(row.sku==="DataZoneStandard"?" eu":"");bar.title=`${name}: P50 ${seconds(value.p50)} s; P95 ${seconds(value.p95)} s; ${value.n} valid observations; ${row.correct_workflows}/${row.attempted_workflows} correct workflows`;bar.setAttribute("aria-label",bar.title);bar.innerHTML=`<div class="bar-track" style="--median:${100*(value.p50||0)/maximum}%;--tail:${100*(value.p95||0)/maximum}%"><span class="tail"></span><span class="bar"></span><span class="p95"></span></div><div class="bar-value">${seconds(value.p50)} s<small>P95 ${seconds(value.p95)} s</small></div>`;section.querySelector(".series").appendChild(bar);}
+    byId("chart").appendChild(section);
+  }
+  if(!rows.length)byId("chart").innerHTML='<p class="empty">No observations for this selection.</p>';
+  const paired=DATA.comparisons.filter(item=>item.comparison==="EU Data Zone minus Global"&&rows.some(row=>row.sku==="DataZoneStandard"&&[row.window,row.client_region,row.resource_region,row.model,row.sku,row.profile,row.api,row.stream].every((value,index)=>value===item.left_condition[index])));
+  const eligible=paired.filter(item=>item.bootstrap_95_percent_interval_ms&&item.left_attempted===100&&item.right_attempted===100);
+  const below=eligible.filter(item=>item.bootstrap_95_percent_interval_ms[1]<0).length, above=eligible.filter(item=>item.bootstrap_95_percent_interval_ms[0]>0).length;
+  byId("pair-summary").innerHTML=`<strong>Case-matched complete-workflow comparison</strong>${below} of ${eligible.length} fully sampled comparisons favor EU Data Zone; ${above} favor Global Standard; ${eligible.length-below-above} have intervals including zero. ${paired.length-eligible.length} partial or insufficiently sampled comparisons are excluded from this statement. This comparison concerns mean complete-workflow duration, independently of the selected chart metric.`;
+  byId("rows").innerHTML=rows.map(row=>{const interval=row[metric].bootstrap_95_percent_intervals_ms?.p50;return `<tr><td>${profileLabel(row.profile)}</td><td>${region(row.client_region)}</td><td>${region(row.resource_region)}</td><td>${row.sku==="GlobalStandard"?"Global Standard":"EU Data Zone"}</td><td class="num ${row.attempted_workflows<100?"partial":""}">${row.correct_workflows} / ${row.attempted_workflows}${row.attempted_workflows<100?" (partial)":""}</td><td class="num">${row.failure_categories.technical_error||0}</td><td class="num">${seconds(row[metric].p50)}</td><td class="num">${seconds(row[metric].p95)}</td><td class="num">${interval?seconds(interval[0])+" to "+seconds(interval[1]):"Insufficient sample"}</td><td class="num">${row.cache_hit_calls} / ${row.cache_observed_calls}</td></tr>`;}).join("");
+}
+document.querySelectorAll('.filters select,#window,input[name="stream"]').forEach(control=>control.addEventListener("change",render));
+render();
+</script>
+</body>
+</html>
