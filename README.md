@@ -1,6 +1,6 @@
 # Foundry Latency Benchmark
 
-**The latency difference between EU Data Zone Standard and Global Standard depends on the workload.** At approximately 1,500 output tokens, median completion times were close, while first-content and tail latency could still differ. The measurements do not establish equivalence or identify geographic distance as the cause.
+**EU Data Zone Standard and Global Standard show workload-dependent latency differences.** This benchmark measures completion time, time to first visible content and response-time variability across regions, APIs and load conditions.
 
 **[Explore the interactive report](https://faustinopalma.github.io/foundry-latency-benchmark/)** or open [the local HTML](preview.html) without a server.
 
@@ -8,7 +8,7 @@ The September 30 - October 1, 2026 campaign recorded **22,400 workflows: 22,388 
 
 ## Test Scope
 
-- EU Data Zone Standard versus Global Standard, compared separately for GPT-5.4 and GPT-5.4 Mini.
+- GPT-5.4 and GPT-5.4 Mini, with deployment types compared within each model.
 - Chat Completions and Responses, streaming and non-streaming, with clients and Foundry resources in Sweden Central and Italy North.
 - Overnight and morning geographic comparisons; overnight input-length, output-length, concurrency and prompt-cache sweeps.
 
